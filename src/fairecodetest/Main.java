@@ -35,7 +35,7 @@ public class Main {
 		HashMap<String, ProductOption> availableProductsMap = mapProducts(allProducts, TEA_DROPS_BRAND);
 		List<Order> processedOrders = new ArrayList<>();
 		List<Order> backorderedOrders = new ArrayList<>();
-		processOrders(allOrders, availableProductsMap, processedOrders, backorderedOrders);
+		processOrders(allOrders, availableProductsMap, processedOrders, backorderedOrders, apiToken);
 
 		Statistics statistics = new Statistics(processedOrders, backorderedOrders);
 
@@ -51,7 +51,7 @@ public class Main {
 		if (largestOrder != null) {
 			System.out.println("Largest order by dollar amount was: " + largestOrder.getId());
 		}
-		if (!stateWithMostOrders.equals("")) {
+		if (stateWithMostOrders != null) {
 			System.out.println("State with most orders was: " + stateWithMostOrders.getKey() + " number of orders: " + stateWithMostOrders.getValue());
 		}
 		if (mostBackorderedProduct != null) {
@@ -84,19 +84,15 @@ public class Main {
 		return availableProductsMap;
 	}
 
-	private static void processOrders(List<OrdersPage> allOrders, HashMap<String, ProductOption> availableProductsMap, List<Order> processedOrders, List<Order> backorderedOrders) {
+	private static void processOrders(List<OrdersPage> allOrders, HashMap<String, ProductOption> availableProductsMap, List<Order> processedOrders, List<Order> backorderedOrders, String apiToken) {
 		// Iterating all orders and choosing which ones must be processed
 		for (OrdersPage page : allOrders) {
 			for (Order order : page.getOrders()) {
 				// Only process the orders that have NEW state, then will check if there's availability
-				if (order.getState().equals("PROCESSING")) {
+				if (order.getState().equals("NEW")) {
 					try {
-						// Populate the lists so we can use them for metrics
-						if (processOrder(order, availableProductsMap)) {
-							processedOrders.add(order);
-						} else {
-							backorderedOrders.add(order);
-						}
+						// Process the orders and populate the lists so we can use them for metrics
+						processOrder(order, availableProductsMap, processedOrders, backorderedOrders, apiToken);
 					} catch (IOException e) {
 						// Do not throw the Exception again because we still want to process the remaining orders
 						System.out.println("ORDER COULD NOT BE PROCESSED: " + order.getId());
@@ -109,7 +105,7 @@ public class Main {
 	/**
 	 * @return true if the processing was done corretly
 	 */
-	private static boolean processOrder(Order order, HashMap<String, ProductOption> productOptionsMapById) throws IOException {
+	private static boolean processOrder(Order order, HashMap<String, ProductOption> productOptionsMapById, List<Order> processedOrders, List<Order> backorderedOrders, String apiToken) throws IOException {
 		// System.out.println("Processing: " + order.getId());
 		// Check if the quantity for all items is enough for the order
 		boolean canBeProcessed = true;
@@ -130,21 +126,23 @@ public class Main {
 		if (canBeProcessed) {
 			// marks the order as processed
 			// ID The ID of the order to accept -> since there is no uppercase ID parameter, using the id one
-			// acceptOrder(order.getId());
+			acceptOrder(order.getId(), apiToken);
 			for (Item item : order.getItems()) {
 				ProductOption option = productOptionsMapById.get(item.getProductOptionId());
 				int optionQuantity = option.getQuantity();
 				int newOptionQuantity = optionQuantity - item.getQuantity();
 
 				// updates the quantity on the server
-				// updateProductOption(item.getProductOptionId(), newOptionQuantity);
+				updateProductOption(item.getProductOptionId(), newOptionQuantity, apiToken);
 
 				// Only subtracts items after the requests are correctly processed
 				option.setQuantity(newOptionQuantity);
+				processedOrders.add(order);
 				// System.out.println("\tSubtracting quantity for " + item.getProductOptionId() + ", before: " + optionQuantity + " after: " + newOptionQuantity);
 			}
 		} else {
 			// Cannot be processed, mark as backordered
+			backorderedOrders.add(order);
 		}
 		return canBeProcessed;
 	}
