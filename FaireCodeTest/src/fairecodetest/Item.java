@@ -10,6 +10,8 @@ public class Item {
 	private String productId;
 	@SerializedName("product_option_id")
 	private String productOptionId;
+	@SerializedName("price_cents")
+	private int price;
 	private int quantity;
 
 	public String getId() {
@@ -50,5 +52,13 @@ public class Item {
 
 	public void setQuantity(int quantity) {
 		this.quantity = quantity;
+	}
+
+	public int getPrice() {
+		return price;
+	}
+
+	public void setPrice(int price) {
+		this.price = price;
 	}
 }

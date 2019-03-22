@@ -8,6 +8,7 @@ public class Order {
 	private String state;
 	private String id;
 	private List<Item> items = new ArrayList<>();
+	private Address address;
 
 	public String getID() {
 		return ID;
@@ -39,5 +40,13 @@ public class Order {
 
 	public void setItems(List<Item> items) {
 		this.items = items;
+	}
+
+	public Address getAddress() {
+		return address;
+	}
+
+	public void setAddress(Address address) {
+		this.address = address;
 	}
 }

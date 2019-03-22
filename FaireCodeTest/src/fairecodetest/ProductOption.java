@@ -7,9 +7,10 @@ public class ProductOption {
 	@SerializedName("product_id")
 	private String productId;
 	@SerializedName("available_quantity")
-	private int quantity = 10;
+	private int quantity = 100;
 	private String name;
 	private boolean active;
+	private int wholesale_price_cents;
 
 	public int getQuantity() {
 		return quantity;
@@ -20,7 +21,7 @@ public class ProductOption {
 	}
 
 	public String getName() {
-		return name;
+		return name;	
 	}
 
 	public void setName(String name) {
@@ -49,6 +50,14 @@ public class ProductOption {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public int getWholesale_price_cents() {
+		return wholesale_price_cents;
+	}
+
+	public void setWholesale_price_cents(int wholesale_price_cents) {
+		this.wholesale_price_cents = wholesale_price_cents;
 	}
 
 	@Override
