@@ -1,4 +1,4 @@
-package fairecodetest;
+package fairechallenge;
 
 import com.google.gson.annotations.SerializedName;
 
@@ -11,8 +11,8 @@ public class Item {
 	@SerializedName("product_option_id")
 	private String productOptionId;
 	@SerializedName("price_cents")
-	private int price;
-	private int quantity;
+	private int price = 0;
+	private int quantity = 0;
 
 	public String getId() {
 		return id;
@@ -60,5 +60,13 @@ public class Item {
 
 	public void setPrice(int price) {
 		this.price = price;
+	}
+
+	/**
+	 * Calculated price paid for this Item, considering quantity
+	 * @return
+	 */
+	public int getCalculatedPrice() {
+		return this.quantity * this.price;
 	}
 }

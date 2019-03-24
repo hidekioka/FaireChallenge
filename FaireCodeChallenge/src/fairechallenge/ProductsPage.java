@@ -1,11 +1,11 @@
-package fairecodetest;
+package fairechallenge;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Class to map the products item in the response JSON 
- * It's a class that represents the page with the items returned from the request
+ * Class to map the products item in the response JSON It's a class that represents the page with the items returned from the request
+ * 
  * @author Hideki
  */
 public class ProductsPage {

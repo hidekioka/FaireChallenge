@@ -1,4 +1,4 @@
-package fairecodetest;
+package fairechallenge;
 
 public class Address {
 	private String state;

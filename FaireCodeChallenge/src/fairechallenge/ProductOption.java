@@ -1,4 +1,4 @@
-package fairecodetest;
+package fairechallenge;
 
 import com.google.gson.annotations.SerializedName;
 

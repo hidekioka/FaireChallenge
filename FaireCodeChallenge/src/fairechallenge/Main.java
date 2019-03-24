@@ -1,4 +1,4 @@
-package fairecodetest;
+package fairechallenge;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,7 +18,7 @@ public class Main {
 	private final static String API_URL_PRODUCTS = "/api/v1/products";
 	private final static String API_URL_ORDERS = "/api/v1/orders";
 	// Will be the user's input
-//	private final static String FAIRE_API_TOKEN = "HQLA9307HSLQYTC24PO2G0LITTIOHS2MJC8120PVZ83HJK4KACRZJL91QB7K01NWS2TUCFXGCHQ8HVED8WNZG0KS6XRNBFRNGY71";
+	private final static String FAIRE_API_TOKEN = "HQLA9307HSLQYTC24PO2G0LITTIOHS2MJC8120PVZ83HJK4KACRZJL91QB7K01NWS2TUCFXGCHQ8HVED8WNZG0KS6XRNBFRNGY71";
 	private final static String FAIRE_API_TOKEN_PARAM_NAME = "X-FAIRE-ACCESS-TOKEN";
 	private final static int LIMIT_SEARCH_PRODUCTS = 100;
 	private final static int LIMIT_SEARCH_ORDERS = 50;
@@ -28,6 +28,20 @@ public class Main {
 		System.out.println("Enter API token:");
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		String apiToken = br.readLine();
+		/**
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 * TODO: Remove this lines later
+		 */
+		if (apiToken == null || apiToken.isEmpty()) {
+			apiToken = FAIRE_API_TOKEN;
+		}
 		List<ProductsPage> allProducts = getAllProducts(apiToken);
 		List<OrdersPage> allOrders = getAllOrders(apiToken);
 
@@ -40,31 +54,45 @@ public class Main {
 		Statistics statistics = new Statistics(processedOrders, backorderedOrders);
 
 		Entry<String, Integer> bestSelling = statistics.getBestSellingProductInQuantity();
-		Order largestOrder = statistics.getLargestOrder();
+		Order largestProcessedOrder = statistics.getLargestProcessedOrder();
 		Entry<String, Integer> stateWithMostOrders = statistics.getStateWithMostOrders();
 		Entry<String, Integer> mostBackorderedProduct = statistics.getMostBackOrderedProductInQuantity();
+		Order largestBackordererdOrder = statistics.getLargestBackorderedOrder();
 		long averagePricePerOrder = statistics.getAveragePricePerOrder();
 		System.out.println("================METRICS===============");
 		if (bestSelling != null) {
 			System.out.println("Best selling product was: " + bestSelling.getKey() + " number of units sold: " + bestSelling.getValue());
+		} else {
+			System.out.println("Could not find the best selling product");
 		}
-		if (largestOrder != null) {
-			System.out.println("Largest order by dollar amount was: " + largestOrder.getId());
+		if (largestProcessedOrder != null) {
+			System.out.println("Largest order by dollar amount was: " + largestProcessedOrder.getId() + " with total price: " + largestProcessedOrder.getCalculatedPrice());
+		} else {
+			System.out.println("Could not find the largest order");
 		}
 		if (stateWithMostOrders != null) {
 			System.out.println("State with most orders was: " + stateWithMostOrders.getKey() + " number of orders: " + stateWithMostOrders.getValue());
+		} else {
+			System.out.println("Could not find the state with most orders");
 		}
 		if (mostBackorderedProduct != null) {
 			System.out.println("Product option that was most backordered was: " + mostBackorderedProduct.getKey() + " with number of units not sold: " + mostBackorderedProduct.getValue());
+		} else {
+			System.out.println("Could not find the product that was most backordered");
 		}
 		System.out.println("Average price paid per order: " + averagePricePerOrder + " cents");
+		if (largestBackordererdOrder != null) {
+			System.out.println("Larges Backordered order by dollar amount: " + largestBackordererdOrder.getId() + " with total price: " + largestBackordererdOrder.getCalculatedPrice());
+		} else {
+			System.out.println("Could not find the backordered order that had the highest prices");
+		}
 		// Other options could be: average sale quantity or Largest backordered order in quantity
 		// Entry<String, Integer> largestBackordered = statistics.getLargestBackOrderedProductInQuantity();
 		// System.out.println("Largest backordered order in quantity: " + largestBackordered.getKey() + " number of units not sold: " + largestBackordered.getValue());
 	}
 
 	private static HashMap<String, ProductOption> mapProducts(List<ProductsPage> allProducts, String brandId) {
-		// Insering all products options available in the map
+		// Inserting all products options available in the map
 		HashMap<String, ProductOption> availableProductsMap = new HashMap<String, ProductOption>();
 		for (ProductsPage page : allProducts) {
 			for (Product product : page.getProducts()) {
@@ -89,7 +117,7 @@ public class Main {
 		for (OrdersPage page : allOrders) {
 			for (Order order : page.getOrders()) {
 				// Only process the orders that have NEW state, then will check if there's availability
-				if (order.getState().equals("NEW")) {
+				if (order.getState().equals("PROCESSING")) {
 					try {
 						// Process the orders and populate the lists so we can use them for metrics
 						processOrder(order, availableProductsMap, processedOrders, backorderedOrders, apiToken);
@@ -106,7 +134,6 @@ public class Main {
 	 * @return true if the processing was done corretly
 	 */
 	private static boolean processOrder(Order order, HashMap<String, ProductOption> productOptionsMapById, List<Order> processedOrders, List<Order> backorderedOrders, String apiToken) throws IOException {
-		// System.out.println("Processing: " + order.getId());
 		// Check if the quantity for all items is enough for the order
 		boolean canBeProcessed = true;
 		for (Item item : order.getItems()) {
@@ -125,15 +152,21 @@ public class Main {
 		}
 		if (canBeProcessed) {
 			// marks the order as processed
-			// ID The ID of the order to accept -> since there is no uppercase ID parameter, using the id one
-			acceptOrder(order.getId(), apiToken);
+			// ID The ID of the order to accept -> since there is no uppercase ID parameter in the JSON, using the lowercase id one
+			/**
+			 * TODO: uncomment
+			 */
+			// acceptOrder(order.getId(), apiToken);
 			for (Item item : order.getItems()) {
 				ProductOption option = productOptionsMapById.get(item.getProductOptionId());
 				int optionQuantity = option.getQuantity();
 				int newOptionQuantity = optionQuantity - item.getQuantity();
 
+				/**
+				 * TODO: uncomment
+				 */
 				// updates the quantity on the server
-				updateProductOption(item.getProductOptionId(), newOptionQuantity, apiToken);
+				// updateProductOption(item.getProductOptionId(), newOptionQuantity, apiToken);
 
 				// Only subtracts items after the requests are correctly processed
 				option.setQuantity(newOptionQuantity);
@@ -177,35 +210,11 @@ public class Main {
 		ProductsPage products = new ProductsPage();
 		String urlParameters = "?limit=" + LIMIT_SEARCH_PRODUCTS + "&page=" + pageNumber;
 		URL url = new URL(BASE_URL + API_URL_PRODUCTS + urlParameters);
-		URLConnection con = url.openConnection();
-		HttpURLConnection http = (HttpURLConnection) con;
-		http.setRequestMethod("GET");
-		// Inserting the token so the API can be accessed
-		http.setRequestProperty(FAIRE_API_TOKEN_PARAM_NAME, apiToken);
-		http.setDoOutput(true);
-
+		String requestMethod = "GET";
+		String requestReturn = sendHttpRequest(url, apiToken, requestMethod);
 		Gson gson = new Gson();
-		// int responseCode = http.getResponseCode();
-		// System.out.println("Get All Products for page: " + pageNumber + " and URL: " + url);
-		// System.out.println("Response Code : " + responseCode);
-
-		try {
-			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			String inputLine;
-			StringBuffer response = new StringBuffer();
-
-			while ((inputLine = in.readLine()) != null) {
-				response.append(inputLine);
-			}
-			System.out.println(response.toString());
-
-			// GSON API easily converts the JSON that come from the request into java classes
-			products = gson.fromJson(response.toString(), products.getClass());
-			in.close();
-		} catch (IOException e) {
-			// Ideally should be using a specific LOG class but for this application it's just okay for a simple print
-			System.out.println(e.getMessage());
-		}
+		products = gson.fromJson(requestReturn, products.getClass());
+		System.out.println(requestReturn);
 		return products;
 	}
 
@@ -213,91 +222,51 @@ public class Main {
 		OrdersPage orders = new OrdersPage();
 		String urlParameters = "?limit=" + LIMIT_SEARCH_ORDERS + "&page=" + pageNumber;
 		URL url = new URL(BASE_URL + API_URL_ORDERS + urlParameters);
-		URLConnection con = url.openConnection();
-		HttpURLConnection http = (HttpURLConnection) con;
-		http.setRequestMethod("GET");
-		// Inserting the token so the API can be accessed
-		http.setRequestProperty(FAIRE_API_TOKEN_PARAM_NAME, apiToken);
-		http.setDoOutput(true);
-
+		String requestMethod = "GET";
+		String requestReturn = sendHttpRequest(url, apiToken, requestMethod);
 		Gson gson = new Gson();
-//		int responseCode = http.getResponseCode();
-//		System.out.println("Get All Orders for page: " + pageNumber + " and URL: " + url);
-//		System.out.println("Response Code : " + responseCode);
-		try {
-			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			String inputLine;
-			StringBuffer response = new StringBuffer();
-
-			while ((inputLine = in.readLine()) != null) {
-				response.append(inputLine);
-			}
-			System.out.println(response.toString());
-
-			// GSON API easily converts the JSON that come from the request into java classes
-			orders = gson.fromJson(response.toString(), orders.getClass());
-			in.close();
-		} catch (IOException e) {
-			// Ideally should be using a specific LOG class but for this application it's just okay for a simple print
-			System.out.println(e.getMessage());
-		}
+		orders = gson.fromJson(requestReturn, orders.getClass());
+		System.out.println(requestReturn);
 		return orders;
 	}
 
 	private static void acceptOrder(String orderId, String apiToken) throws IOException {
 		URL url = new URL(BASE_URL + API_URL_ORDERS + "/" + orderId + "/processing");
 		URLConnection con = url.openConnection();
-		HttpURLConnection http = (HttpURLConnection) con;
-		http.setRequestMethod("PUT");
-		// Inserting the token so the API can be accessed
-		http.setRequestProperty(FAIRE_API_TOKEN_PARAM_NAME, apiToken);
-		http.setDoOutput(true);
-
-//		int responseCode = http.getResponseCode();
-//		System.out.println("Processing order: " + orderId + " and URL: " + url);
-//		System.out.println("Response Code : " + responseCode);
-		try {
-			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			String inputLine;
-			StringBuffer response = new StringBuffer();
-
-			while ((inputLine = in.readLine()) != null) {
-				response.append(inputLine);
-			}
-			System.out.println(response.toString());
-			in.close();
-		} catch (IOException e) {
-			// Ideally should be using a specific LOG class but for this application it's just okay for a simple print
-			System.out.println(e.getMessage());
-		}
+		String requestMethod = "PUT";
+		String requestReturn = sendHttpRequest(url, apiToken, requestMethod);
+		System.out.println(requestReturn);
 	}
 
 	private static void updateProductOption(String productOptionId, int availableUnits, String apiToken) throws IOException {
 		String urlParameters = "?available_units=" + availableUnits;
 		URL url = new URL(BASE_URL + API_URL_PRODUCTS + "/options/" + productOptionId + urlParameters);
+		String requestMethod = "PATCH";
+		String requestReturn = sendHttpRequest(url, apiToken, requestMethod);
+		System.out.println(requestReturn);
+	}
+	
+	private static String sendHttpRequest(URL url, String apiToken, String requestMethod) throws IOException {
 		URLConnection con = url.openConnection();
 		HttpURLConnection http = (HttpURLConnection) con;
-		http.setRequestMethod("PATCH ");
+		http.setRequestMethod(requestMethod);
 		// Inserting the token so the API can be accessed
 		http.setRequestProperty(FAIRE_API_TOKEN_PARAM_NAME, apiToken);
 		http.setDoOutput(true);
-
-//		int responseCode = http.getResponseCode();
-//		System.out.println("Updating quantity for product: " + productOptionId + ": and quantity: " + availableUnits + " and URL: " + url);
-//		System.out.println("Response Code : " + responseCode);
+		StringBuffer response = new StringBuffer();
 		try {
 			BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
 			String inputLine;
-			StringBuffer response = new StringBuffer();
 
 			while ((inputLine = in.readLine()) != null) {
 				response.append(inputLine);
 			}
-			System.out.println(response.toString());
 			in.close();
 		} catch (IOException e) {
 			// Ideally should be using a specific LOG class but for this application it's just okay for a simple print
 			System.out.println(e.getMessage());
 		}
+		return response.toString();
+		
 	}
 }

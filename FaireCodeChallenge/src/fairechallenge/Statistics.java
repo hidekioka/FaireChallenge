@@ -1,4 +1,4 @@
-package fairecodetest;
+package fairechallenge;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.Map.Entry;
 
 /**
- * This class will be used to calculate some statistics from all processed orders
+ * This class will be used to calculate some statistics from all processed
+ * orders
  * 
  * @author Hideki
  *
@@ -35,39 +36,40 @@ public class Statistics {
 				if (mapOfSoldProducts.get(item.getProductOptionId()) == null) {
 					mapOfSoldProducts.put(item.getProductOptionId(), item.getQuantity());
 				} else {
-					mapOfSoldProducts.put(item.getProductOptionId(), mapOfSoldProducts.get(item.getProductOptionId()) + item.getQuantity());
+					mapOfSoldProducts.put(item.getProductOptionId(),
+							mapOfSoldProducts.get(item.getProductOptionId()) + item.getQuantity());
 				}
 			}
 		}
 
 		// Checks which is quantity is bigger and returns the product
-		Entry<String, Integer> bestSellingOption = null;
-		for (Entry<String, Integer> entry : mapOfSoldProducts.entrySet()) {
-			if (bestSellingOption == null) {
-				bestSellingOption = entry;
-			} else {
-				if (entry.getValue() > bestSellingOption.getValue()) {
-					bestSellingOption = entry;
-				}
-			}
-		}
-
-		return bestSellingOption;
+		return getHighestValueFromMap(mapOfSoldProducts);
 	}
 
 	/**
-	 * Returns the order with the largest dollar paid in it, chooses first in case of more than one
+	 * Returns the order with the largest dollar paid in it, chooses first in case
+	 * of more than one
 	 * 
 	 * @return Order
 	 */
-	public Order getLargestOrder() {
+	public Order getLargestProcessedOrder() {
+		return this.getLargestOrder(this.processedOrders);
+	}
+
+	/**
+	 * Returns the order that was not processed and had the highest total price
+	 * 
+	 * @return
+	 */
+	public Order getLargestBackorderedOrder() {
+		return this.getLargestOrder(this.backorderedOrders);
+	}
+	
+	public Order getLargestOrder(List<Order> orders) {
 		Order largestOrder = null;
 		int highestPaidInOrder = -1;
-		for (Order order : this.processedOrders) {
-			int totalPaidInOrder = 0;
-			for (Item item : order.getItems()) {
-				totalPaidInOrder = totalPaidInOrder + item.getPrice() * item.getQuantity();
-			}
+		for (Order order : orders) {
+			int totalPaidInOrder = order.getCalculatedPrice();
 			if (totalPaidInOrder > highestPaidInOrder) {
 				highestPaidInOrder = totalPaidInOrder;
 				largestOrder = order;
@@ -93,22 +95,12 @@ public class Statistics {
 				}
 			}
 		}
-		// Checks which state had more orders
-		Entry<String, Integer> stateWithMostOrders = null;
-		for (Entry<String, Integer> entry : mapOfStates.entrySet()) {
-			if (stateWithMostOrders == null) {
-				stateWithMostOrders = entry;
-			} else {
-				if (entry.getValue() > stateWithMostOrders.getValue()) {
-					stateWithMostOrders = entry;
-				}
-			}
-		}
-		return stateWithMostOrders;
+		// Checks which is quantity is bigger and returns the product
+		return getHighestValueFromMap(mapOfStates);
 	}
 
 	/**
-	 * Very similar to getBestSellingProductInQuantity but it must be processed in the orders that were backordered
+	 * The product option that was most backordered
 	 * 
 	 * @return Entry<String, Integer> with product option id and quantity
 	 */
@@ -121,24 +113,14 @@ public class Statistics {
 				if (mapOfBackOrderedProducts.get(item.getProductOptionId()) == null) {
 					mapOfBackOrderedProducts.put(item.getProductOptionId(), item.getQuantity());
 				} else {
-					mapOfBackOrderedProducts.put(item.getProductOptionId(), mapOfBackOrderedProducts.get(item.getProductOptionId()) + item.getQuantity());
+					mapOfBackOrderedProducts.put(item.getProductOptionId(),
+							mapOfBackOrderedProducts.get(item.getProductOptionId()) + item.getQuantity());
 				}
 			}
 		}
 
 		// Checks which is quantity is bigger and returns the product
-		Entry<String, Integer> mostBackOrderedProduct = null;
-		for (Entry<String, Integer> entry : mapOfBackOrderedProducts.entrySet()) {
-			if (mostBackOrderedProduct == null) {
-				mostBackOrderedProduct = entry;
-			} else {
-				if (entry.getValue() > mostBackOrderedProduct.getValue()) {
-					mostBackOrderedProduct = entry;
-				}
-			}
-		}
-
-		return mostBackOrderedProduct;
+		return getHighestValueFromMap(mapOfBackOrderedProducts);
 	}
 
 	/**
@@ -149,11 +131,31 @@ public class Statistics {
 	public long getAveragePricePerOrder() {
 		int totalPricePaid = 0;
 		for (Order order : this.processedOrders) {
-			for (Item item : order.getItems()) {
-				totalPricePaid = totalPricePaid + item.getPrice() * item.getQuantity();
+			totalPricePaid = totalPricePaid + order.getCalculatedPrice();
+			System.out.println(order.getCalculatedPrice());
+		}
+		long averagePricePerOrder = this.processedOrders.size() != 0L
+				? Long.valueOf(totalPricePaid) / this.processedOrders.size()
+				: 0L;
+		return averagePricePerOrder;
+	}
+
+	/**
+	 * Returns the entry that has the highest number in the map value
+	 * 
+	 * @return Entry<String, Integer>
+	 */
+	private Entry<String, Integer> getHighestValueFromMap(HashMap<String, Integer> map) {
+		Entry<String, Integer> highestValueEntry = null;
+		for (Entry<String, Integer> entry : map.entrySet()) {
+			if (highestValueEntry == null) {
+				highestValueEntry = entry;
+			} else {
+				if (entry.getValue() > highestValueEntry.getValue()) {
+					highestValueEntry = entry;
+				}
 			}
 		}
-		long averagePricePerOrder = this.processedOrders.size() != 0L ? Long.valueOf(totalPricePaid) / this.processedOrders.size() : 0L;
-		return averagePricePerOrder;
+		return highestValueEntry;
 	}
 }

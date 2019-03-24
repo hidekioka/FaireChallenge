@@ -1,4 +1,4 @@
-package fairecodetest;
+package fairechallenge;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,5 +48,17 @@ public class Order {
 
 	public void setAddress(Address address) {
 		this.address = address;
+	}
+
+	/**
+	 * Calculated total price of the order
+	 * @return
+	 */
+	public int getCalculatedPrice() {
+		int totalPaidInOrder = -1;
+		for (Item item : this.getItems()) {
+			totalPaidInOrder = totalPaidInOrder + item.getCalculatedPrice();
+		}
+		return totalPaidInOrder;
 	}
 }
