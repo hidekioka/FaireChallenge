@@ -65,9 +65,9 @@ public class Statistics {
 		return this.getLargestOrder(this.backorderedOrders);
 	}
 	
-	public Order getLargestOrder(List<Order> orders) {
+	private Order getLargestOrder(List<Order> orders) {
 		Order largestOrder = null;
-		int highestPaidInOrder = -1;
+		int highestPaidInOrder = 0;
 		for (Order order : orders) {
 			int totalPaidInOrder = order.getCalculatedPrice();
 			if (totalPaidInOrder > highestPaidInOrder) {
@@ -132,7 +132,6 @@ public class Statistics {
 		int totalPricePaid = 0;
 		for (Order order : this.processedOrders) {
 			totalPricePaid = totalPricePaid + order.getCalculatedPrice();
-			System.out.println(order.getCalculatedPrice());
 		}
 		long averagePricePerOrder = this.processedOrders.size() != 0L
 				? Long.valueOf(totalPricePaid) / this.processedOrders.size()

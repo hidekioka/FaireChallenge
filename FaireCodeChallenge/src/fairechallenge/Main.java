@@ -18,7 +18,7 @@ public class Main {
 	private final static String API_URL_PRODUCTS = "/api/v1/products";
 	private final static String API_URL_ORDERS = "/api/v1/orders";
 	// Will be the user's input
-	private final static String FAIRE_API_TOKEN = "HQLA9307HSLQYTC24PO2G0LITTIOHS2MJC8120PVZ83HJK4KACRZJL91QB7K01NWS2TUCFXGCHQ8HVED8WNZG0KS6XRNBFRNGY71";
+	// private final static String FAIRE_API_TOKEN = "HQLA9307HSLQYTC24PO2G0LITTIOHS2MJC8120PVZ83HJK4KACRZJL91QB7K01NWS2TUCFXGCHQ8HVED8WNZG0KS6XRNBFRNGY71";
 	private final static String FAIRE_API_TOKEN_PARAM_NAME = "X-FAIRE-ACCESS-TOKEN";
 	private final static int LIMIT_SEARCH_PRODUCTS = 100;
 	private final static int LIMIT_SEARCH_ORDERS = 50;
@@ -28,20 +28,6 @@ public class Main {
 		System.out.println("Enter API token:");
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		String apiToken = br.readLine();
-		/**
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 * TODO: Remove this lines later
-		 */
-		if (apiToken == null || apiToken.isEmpty()) {
-			apiToken = FAIRE_API_TOKEN;
-		}
 		List<ProductsPage> allProducts = getAllProducts(apiToken);
 		List<OrdersPage> allOrders = getAllOrders(apiToken);
 
@@ -86,9 +72,6 @@ public class Main {
 		} else {
 			System.out.println("Could not find the backordered order that had the highest prices");
 		}
-		// Other options could be: average sale quantity or Largest backordered order in quantity
-		// Entry<String, Integer> largestBackordered = statistics.getLargestBackOrderedProductInQuantity();
-		// System.out.println("Largest backordered order in quantity: " + largestBackordered.getKey() + " number of units not sold: " + largestBackordered.getValue());
 	}
 
 	private static HashMap<String, ProductOption> mapProducts(List<ProductsPage> allProducts, String brandId) {
@@ -117,7 +100,7 @@ public class Main {
 		for (OrdersPage page : allOrders) {
 			for (Order order : page.getOrders()) {
 				// Only process the orders that have NEW state, then will check if there's availability
-				if (order.getState().equals("PROCESSING")) {
+				if (order.getState().equals("NEW")) {
 					try {
 						// Process the orders and populate the lists so we can use them for metrics
 						processOrder(order, availableProductsMap, processedOrders, backorderedOrders, apiToken);
@@ -131,6 +114,8 @@ public class Main {
 	}
 
 	/**
+	 * Check if the order can be processed and put in the list of processed or backordered
+	 * 
 	 * @return true if the processing was done corretly
 	 */
 	private static boolean processOrder(Order order, HashMap<String, ProductOption> productOptionsMapById, List<Order> processedOrders, List<Order> backorderedOrders, String apiToken) throws IOException {
@@ -141,7 +126,8 @@ public class Main {
 			if (option == null) {
 				// This product option is not available so this order cannot be processed
 				canBeProcessed = false;
-				// System.out.println("\tNo product with this id: " + item.getProductOptionId());
+				// System.out.println("\tNo product with this id: " +
+				// item.getProductOptionId());
 				break;
 			} else if (option.getQuantity() < item.getQuantity()) {
 				// This product option is not available so this order cannot be processed
@@ -151,22 +137,15 @@ public class Main {
 			}
 		}
 		if (canBeProcessed) {
-			// marks the order as processed
-			// ID The ID of the order to accept -> since there is no uppercase ID parameter in the JSON, using the lowercase id one
-			/**
-			 * TODO: uncomment
-			 */
-			// acceptOrder(order.getId(), apiToken);
+			// marks the order as processed ID The ID of the order to accept -> since there is no uppercase ID parameter in the JSON, using the lowercase id one
+			acceptOrder(order.getId(), apiToken);
 			for (Item item : order.getItems()) {
 				ProductOption option = productOptionsMapById.get(item.getProductOptionId());
 				int optionQuantity = option.getQuantity();
 				int newOptionQuantity = optionQuantity - item.getQuantity();
 
-				/**
-				 * TODO: uncomment
-				 */
 				// updates the quantity on the server
-				// updateProductOption(item.getProductOptionId(), newOptionQuantity, apiToken);
+				updateProductOption(item.getProductOptionId(), newOptionQuantity, apiToken);
 
 				// Only subtracts items after the requests are correctly processed
 				option.setQuantity(newOptionQuantity);
@@ -232,7 +211,6 @@ public class Main {
 
 	private static void acceptOrder(String orderId, String apiToken) throws IOException {
 		URL url = new URL(BASE_URL + API_URL_ORDERS + "/" + orderId + "/processing");
-		URLConnection con = url.openConnection();
 		String requestMethod = "PUT";
 		String requestReturn = sendHttpRequest(url, apiToken, requestMethod);
 		System.out.println(requestReturn);
@@ -245,7 +223,7 @@ public class Main {
 		String requestReturn = sendHttpRequest(url, apiToken, requestMethod);
 		System.out.println(requestReturn);
 	}
-	
+
 	private static String sendHttpRequest(URL url, String apiToken, String requestMethod) throws IOException {
 		URLConnection con = url.openConnection();
 		HttpURLConnection http = (HttpURLConnection) con;
@@ -267,6 +245,6 @@ public class Main {
 			System.out.println(e.getMessage());
 		}
 		return response.toString();
-		
+
 	}
 }

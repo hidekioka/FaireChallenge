@@ -55,7 +55,7 @@ public class Order {
 	 * @return
 	 */
 	public int getCalculatedPrice() {
-		int totalPaidInOrder = -1;
+		int totalPaidInOrder = 0;
 		for (Item item : this.getItems()) {
 			totalPaidInOrder = totalPaidInOrder + item.getCalculatedPrice();
 		}
