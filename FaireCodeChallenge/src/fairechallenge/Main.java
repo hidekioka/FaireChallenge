@@ -154,6 +154,7 @@ public class Main {
 			}
 		} else {
 			// Cannot be processed, mark as backordered
+			backorderOrder(order.getId(), apiToken);
 			backorderedOrders.add(order);
 		}
 		return canBeProcessed;
@@ -212,6 +213,13 @@ public class Main {
 	private static void acceptOrder(String orderId, String apiToken) throws IOException {
 		URL url = new URL(BASE_URL + API_URL_ORDERS + "/" + orderId + "/processing");
 		String requestMethod = "PUT";
+		String requestReturn = sendHttpRequest(url, apiToken, requestMethod);
+		System.out.println(requestReturn);
+	}
+
+	private static void backorderOrder(String orderId, String apiToken) throws IOException {
+		URL url = new URL(BASE_URL + API_URL_ORDERS + "/" + orderId + "/items/availability");
+		String requestMethod = "POST";
 		String requestReturn = sendHttpRequest(url, apiToken, requestMethod);
 		System.out.println(requestReturn);
 	}
